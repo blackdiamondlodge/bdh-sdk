@@ -91,6 +91,37 @@ class Stay:
     guest: str
     arrival: datetime | None = None
     checkout: datetime | None = None
+    # The owners themselves are staying: the homepage acts as signed in.
+    owner: bool = False
+
+
+@dataclass(frozen=True)
+class Reading:
+    """A labelled value on the lodge card, e.g. ``Reading("Hot tub", 39, "C")``.
+
+    Temperatures use unit ``"C"`` so the hub can show them in the visitor's
+    chosen units.
+    """
+
+    label: str
+    value: float | str
+    unit: str = ""
+
+
+@dataclass(frozen=True)
+class Card:
+    """The lodge card at the top of the homepage.
+
+    ``alerts`` are problems worth acting on; tapping the card opens
+    ``url_name``. The hub hides both from guests.
+    """
+
+    title: str
+    detail: str = ""
+    readings: tuple[Reading, ...] = ()
+    alerts: tuple[str, ...] = ()
+    url_name: str | None = None
+    level: str = INFO
 
 
 @dataclass(frozen=True)
@@ -116,6 +147,9 @@ class PluginSpec:
     - ``stay``: ``() -> Stay | None``. Reports the stay in progress, if any;
       the homepage is in guest mode while one is reported. Called like
       ``status`` (worker thread, timeout, cached briefly).
+    - ``card``: ``() -> Card | None``. The lodge card shown at the top of
+      the homepage in every mode; the first app that provides one is used.
+      Called like ``status``.
     """
 
     id: str
@@ -128,6 +162,7 @@ class PluginSpec:
     run_shortcut: str | None = None
     websocket_routes: str | None = None
     stay: str | None = None
+    card: str | None = None
     api_version: int = API_VERSION
 
     @property
