@@ -72,6 +72,25 @@ With no value and no default, `bdh_sdk.settings.MissingSetting` (a
 `KeyError`) is raised. `cast` is applied only to string values; `as_bool`
 accepts `1/true/yes/on` and `0/false/no/off` (case-insensitive).
 
+## Home Assistant client
+
+`bdh_sdk.ha` talks to Home Assistant for apps that need it (install the
+`bdh-sdk[ha]` extra; the hub already ships `requests` and `websocket-client`).
+The connection comes from `HOMEASSISTANT_URL` and
+`HOMEASSISTANT_ACCESS_TOKEN`, read from Django settings and then the
+environment.
+
+```python
+from bdh_sdk import ha
+
+state = ha.get_entity_state("light.kitchen")       # dict or None
+ok, err = ha.call_service("light", "turn_on", "light.kitchen")
+```
+
+Read helpers (`get_entity_state`, `get_entity_states`, `get_history`) return
+`None`/`{}` when HA is unreachable, so pages can still render.
+`get_all_states`, `get_static` and `ws_commands` raise `ha.HAError` instead.
+
 ## Testing helpers
 
 ```python
