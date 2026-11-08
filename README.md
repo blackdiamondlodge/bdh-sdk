@@ -118,6 +118,14 @@ Inputs: `app_id` (required), `hub_ref` (default `main`), `python-version`
 (default `3.12`), `test_module` (default `app_id`), `sdk_ref` (default
 `v0`). Optional secret `hub_token` if the hub repo is private.
 
+`.github/workflows/app-release.yml` is the matching reusable release
+workflow. Call it on pushes to `main` (with `permissions: contents: write`).
+The first time a `pyproject.toml` version lands on main it tags
+`v<version>`, builds the wheel and publishes a GitHub release. The release
+notes include the hashed line to paste into the hub's
+`sites/<site>/apps.txt`, which is also available as the `requirement`
+output.
+
 ## Development
 
 ```
