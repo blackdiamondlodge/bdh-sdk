@@ -42,14 +42,20 @@ spec = PluginSpec(
 (`"blackdiamondhub.plugins"`), the homepage modes `GUEST`, `DASHBOARD`,
 `OWNER`, `ALL_MODES`, `OWNER_ONLY`, `SECTIONS`, the status levels `INFO`,
 `ON`, `WARN`, `STATUS_LEVELS`, and the frozen dataclasses `PluginSpec`,
-`Tile`, `Status`, `Shortcut` and `Stay`. Hooks (`status`, `shortcuts`,
-`run_shortcut`, `websocket_routes`, `stay`) are dotted `module.attribute`
-paths that the hub resolves lazily.
+`Tile`, `Status`, `Shortcut`, `Stay`, `Card` and `Reading`. Hooks (`status`,
+`shortcuts`, `run_shortcut`, `websocket_routes`, `stay`, `card`) are dotted
+`module.attribute` paths that the hub resolves lazily.
 
 A `stay` hook returns the `Stay` in progress (guest name, arrival, checkout)
 or None. While an app reports a stay the homepage is in guest mode and
 welcomes the guest by name. Never put door codes in it: the homepage is a
-kiosk.
+kiosk. A stay with `owner=True` is an owner visit: the homepage acts as
+signed in until it ends.
+
+A `card` hook returns the lodge `Card` shown at the top of the homepage in
+every mode (title, detail line, `Reading`s such as temperatures, and
+alerts). Tapping it opens `url_name`; guests see neither alerts nor the
+link.
 
 ## App settings
 

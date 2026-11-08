@@ -6,6 +6,7 @@ Importing this package never imports or configures Django, so app
 from .plugins import (
     ALL_MODES,
     API_VERSION,
+    Card,
     DASHBOARD,
     ENTRY_POINT_GROUP,
     GUEST,
@@ -17,13 +18,14 @@ from .plugins import (
     STATUS_LEVELS,
     WARN,
     PluginSpec,
+    Reading,
     Shortcut,
     Stay,
     Status,
     Tile,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "__version__",
@@ -43,5 +45,7 @@ __all__ = [
     "Status",
     "Shortcut",
     "Stay",
+    "Reading",
+    "Card",
     "PluginSpec",
 ]

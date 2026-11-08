@@ -11,11 +11,13 @@ import bdh_sdk
 from bdh_sdk import (
     ALL_MODES,
     API_VERSION,
+    Card,
     ENTRY_POINT_GROUP,
     INFO,
     OWNER,
     OWNER_ONLY,
     PluginSpec,
+    Reading,
     Shortcut,
     Stay,
     Status,
@@ -29,7 +31,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(spec.api_version, API_VERSION)
         self.assertEqual(spec.tiles, ())
         for name in ("urls", "url_prefix", "status", "shortcuts",
-                     "run_shortcut", "websocket_routes", "stay"):
+                     "run_shortcut", "websocket_routes", "stay", "card"):
             self.assertIsNone(getattr(spec, name), name)
 
     def test_prefix_defaults_to_id_and_honours_override(self):
@@ -55,6 +57,8 @@ class ContractTests(unittest.TestCase):
             Status("x"),
             Shortcut(id="s", title="t", icon="i"),
             Stay("Smith"),
+            Card("Vacation mode"),
+            Reading("Hot tub", 39, "C"),
         ]
         for obj in objs:
             field = dataclasses.fields(obj)[0].name
