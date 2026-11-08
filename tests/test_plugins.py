@@ -17,6 +17,7 @@ from bdh_sdk import (
     OWNER_ONLY,
     PluginSpec,
     Shortcut,
+    Stay,
     Status,
     Tile,
 )
@@ -28,7 +29,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(spec.api_version, API_VERSION)
         self.assertEqual(spec.tiles, ())
         for name in ("urls", "url_prefix", "status", "shortcuts",
-                     "run_shortcut", "websocket_routes"):
+                     "run_shortcut", "websocket_routes", "stay"):
             self.assertIsNone(getattr(spec, name), name)
 
     def test_prefix_defaults_to_id_and_honours_override(self):
@@ -53,6 +54,7 @@ class ContractTests(unittest.TestCase):
             Tile(title="t", url_name="u", icon="i", section="more"),
             Status("x"),
             Shortcut(id="s", title="t", icon="i"),
+            Stay("Smith"),
         ]
         for obj in objs:
             field = dataclasses.fields(obj)[0].name

@@ -9,6 +9,7 @@ free of Django model/settings imports: specs are loaded while settings are
 still being built.
 """
 from dataclasses import dataclass, field
+from datetime import datetime
 
 API_VERSION = 1
 
@@ -80,6 +81,19 @@ class Shortcut:
 
 
 @dataclass(frozen=True)
+class Stay:
+    """The guests currently staying at the lodge.
+
+    Use timezone-aware datetimes. Don't put door codes or other secrets here:
+    the homepage shows these fields on a kiosk anyone can walk up to.
+    """
+
+    guest: str
+    arrival: datetime | None = None
+    checkout: datetime | None = None
+
+
+@dataclass(frozen=True)
 class PluginSpec:
     """Describes one hub app.
 
@@ -99,6 +113,9 @@ class PluginSpec:
       ``"myapp.routing.websocket_urlpatterns"``). Imported by the ASGI
       application after Django is set up and mounted under the shared
       websocket router.
+    - ``stay``: ``() -> Stay | None``. Reports the stay in progress, if any;
+      the homepage is in guest mode while one is reported. Called like
+      ``status`` (worker thread, timeout, cached briefly).
     """
 
     id: str
@@ -110,6 +127,7 @@ class PluginSpec:
     shortcuts: str | None = None
     run_shortcut: str | None = None
     websocket_routes: str | None = None
+    stay: str | None = None
     api_version: int = API_VERSION
 
     @property
