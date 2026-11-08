@@ -35,6 +35,11 @@ on:
         required: false
         type: string
         default: v0
+      selenium:
+        description: Also run the app's tests tagged "selenium" in headless Chrome.
+        required: false
+        type: boolean
+        default: true
     secrets:
       hub_token:
         description: Token to read BlackDiamondHub if it is private. Defaults to GITHUB_TOKEN.
@@ -102,3 +107,48 @@ jobs:
       - name: App tests
         working-directory: hub
         run: python manage.py test "$TEST_MODULE" --settings=BlackDiamondHub.settings_test --exclude-tag=selenium -v 2
+
+  selenium:
+    if: ${{ inputs.selenium }}
+    runs-on: ubuntu-22.04
+    env:
+      APP_ID: ${{ inputs.app_id }}
+      TEST_MODULE: ${{ inputs.test_module || inputs.app_id }}
+      DJANGO_SETTINGS_MODULE: BlackDiamondHub.settings_test
+      DJANGO_SECRET_KEY: ci
+    steps:
+      - name: Checkout app
+        uses: actions/checkout@v4
+        with:
+          path: app
+
+      - name: Checkout hub
+        uses: actions/checkout@v4
+        with:
+          repository: blackdiamondlodge/BlackDiamondHub
+          ref: ${{ inputs.hub_ref }}
+          path: hub
+          token: ${{ secrets.hub_token || github.token }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libzbar0 libpq-dev
+
+      # The runner image ships Google Chrome; Selenium Manager fetches the
+      # matching chromedriver.
+      - name: Install hub requirements, bdh-sdk and the app
+        run: |
+          python -m pip install --upgrade pip build
+          pip install -r hub/requirements.txt
+          pip install "bdh-sdk @ git+https://github.com/blackdiamondlodge/bdh-sdk@${{ inputs.sdk_ref }}"
+          python -m build --wheel -o dist app
+          pip install dist/*.whl
+
+      - name: Selenium tests
+        working-directory: hub
+        run: python manage.py test "$TEST_MODULE" --settings=BlackDiamondHub.settings_test --tag=selenium -v 2

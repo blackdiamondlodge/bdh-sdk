@@ -112,7 +112,9 @@ installs the app wheel, then:
   `DJANGO_SETTINGS_MODULE=BlackDiamondHub.settings_test`;
 - runs `manage.py hub_smoke --app <app_id>` (plugin loaded via entry point,
   tile URLs reverse and return < 500 for a superuser, icon resolves);
-- runs `manage.py test <test_module> --exclude-tag=selenium`.
+- runs `manage.py test <test_module> --exclude-tag=selenium`;
+- in a second job (input `selenium`, default true), runs the app's tests
+  tagged `selenium` in the runner's headless Chrome.
 
 Inputs: `app_id` (required), `hub_ref` (default `main`), `python-version`
 (default `3.12`), `test_module` (default `app_id`), `sdk_ref` (default
