@@ -40,6 +40,11 @@ on:
         required: false
         type: boolean
         default: true
+      go2rtc:
+        description: Start a go2rtc server on localhost:1984 for the selenium tests.
+        required: false
+        type: boolean
+        default: false
     secrets:
       hub_token:
         description: Token to read BlackDiamondHub if it is private. Defaults to GITHUB_TOKEN.
@@ -166,6 +171,18 @@ jobs:
           pip install "bdh-sdk @ git+https://github.com/blackdiamondlodge/bdh-sdk@${{ inputs.sdk_ref }}"
           python -m build --wheel -o dist app
           pip install dist/*.whl
+
+      - name: Start go2rtc
+        if: ${{ inputs.go2rtc }}
+        run: |
+          mkdir -p /tmp/go2rtc
+          printf 'api:\n  listen: ":1984"\n  origin: "*"\nwebrtc:\n  listen: ":8555"\n' > /tmp/go2rtc/go2rtc.yaml
+          docker run -d --name go2rtc -p 1984:1984 -p 8555:8555 -v /tmp/go2rtc:/config alexxit/go2rtc
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:1984/api/streams > /dev/null && { echo "go2rtc is ready"; exit 0; }
+            sleep 1
+          done
+          echo "go2rtc did not start"; exit 1
 
       - name: Selenium tests
         working-directory: hub
