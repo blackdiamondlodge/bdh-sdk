@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bdh-sdk"
+version = "0.1.0"
+description = "Black Diamond Hub SDK: the plugin contract hub apps import to describe themselves to the hub."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Black Diamond Lodge" }]
+dependencies = []
+classifiers = [
+    "Framework :: Django",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/blackdiamondlodge/bdh-sdk"
+
+[tool.setuptools]
+packages = ["bdh_sdk"]
