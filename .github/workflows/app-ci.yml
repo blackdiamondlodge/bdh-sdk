@@ -70,6 +70,15 @@ jobs:
           path: hub
           token: ${{ secrets.hub_token || github.token }}
 
+      # While an app is being extracted the hub still ships its own copy.
+      # Drop it so the tests run against the installed wheel and the plugin
+      # id isn't registered twice.
+      - name: Remove any in-tree copy of the app from the hub
+        working-directory: hub
+        run: |
+          rm -rf "$APP_ID"
+          sed -i "/['\"]${APP_ID}\.plugin\.spec['\"]/d" BlackDiamondHub/settings.py
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python-version }}
@@ -129,6 +138,15 @@ jobs:
           ref: ${{ inputs.hub_ref }}
           path: hub
           token: ${{ secrets.hub_token || github.token }}
+
+      # While an app is being extracted the hub still ships its own copy.
+      # Drop it so the tests run against the installed wheel and the plugin
+      # id isn't registered twice.
+      - name: Remove any in-tree copy of the app from the hub
+        working-directory: hub
+        run: |
+          rm -rf "$APP_ID"
+          sed -i "/['\"]${APP_ID}\.plugin\.spec['\"]/d" BlackDiamondHub/settings.py
 
       - uses: actions/setup-python@v5
         with:
