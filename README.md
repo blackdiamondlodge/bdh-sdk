@@ -133,11 +133,12 @@ installs the app wheel, then:
   tile URLs reverse and return < 500 for a superuser, icon resolves);
 - runs `manage.py test <test_module> --exclude-tag=selenium`;
 - in a second job (input `selenium`, default true), runs the app's tests
-  tagged `selenium` in the runner's headless Chrome.
+  tagged `selenium` in the runner's headless Chrome (with a go2rtc server
+  on `localhost:1984` when `go2rtc: true`).
 
 Inputs: `app_id` (required), `hub_ref` (default `main`), `python-version`
 (default `3.12`), `test_module` (default `app_id`), `sdk_ref` (default
-`v0`). Optional secret `hub_token` if the hub repo is private.
+`v0`), `selenium` (default true), `go2rtc` (default false). Optional secret `hub_token` if the hub repo is private.
 
 `.github/workflows/app-release.yml` is the matching reusable release
 workflow. Call it on pushes to `main` (with `permissions: contents: write`).
