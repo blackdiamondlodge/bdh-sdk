@@ -32,6 +32,13 @@ bdh-app-<id>/
 Templates and static files are namespaced under the app id so they never
 collide with the hub's or another app's files.
 
+Pages extend the hub's `base.html`. The hub navbar already shows the lodge
+brand and centres the app's tile title, so pages must not render their own
+brand header or a visible page title (use `<h1 class="visually-hidden">`).
+Override the navbar title with `{% block navbar_title %}` only if the tile
+title doesn't fit; put page controls such as unit toggles in
+`{% block navbar_extras %}`.
+
 ## pyproject.toml
 
 ```toml
