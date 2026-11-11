@@ -177,6 +177,19 @@ event loop. Async code can `await apush(alert)`. The hub installs the delivery
 function with `set_sender`. Without one (unit tests, scripts), pushing only
 logs at debug level. Import `bdh_sdk.alerts` inside your worker, not in `plugin.py`.
 
+## Admin check
+
+`is_admin(request)` is true when a signed-in, active hub admin (Django staff
+user) made the request. Use it instead of reading `request.user` fields, so
+every app follows the hub's rule and never touches the user table.
+
+```python
+from bdh_sdk import is_admin
+
+if not is_admin(request):
+    return HttpResponseForbidden()
+```
+
 ## Home Assistant client
 
 `bdh_sdk.ha` talks to Home Assistant for apps that need it (install the
