@@ -143,6 +143,19 @@ url = storage.url(name)
 
 App ids must be lower-case letters, digits and `_`.
 
+## QR codes
+
+`bdh_sdk.qr.qr_svg(text)` returns an SVG QR code in the lodge style: round
+dots, square finder patterns and the BDL monogram in the centre (error
+correction H keeps it scannable). Install the `bdh-sdk[qr]` extra; the hub
+already ships `qrcode`.
+
+```python
+from bdh_sdk.qr import qr_svg
+
+svg = qr_svg("http://192.168.10.216/settings/display/upload/abc/")
+```
+
 ## Home Assistant client
 
 `bdh_sdk.ha` talks to Home Assistant for apps that need it (install the
