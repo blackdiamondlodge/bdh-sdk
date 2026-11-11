@@ -111,6 +111,38 @@ Types are `BOOL`, `INT` (optional `minimum`/`maximum`), `STR`, `CHOICE`
 for the form. Saved values win over the environment, so keep reading them
 with `app_setting`. Never declare secrets as settings.
 
+## App state and media
+
+Apps that need to remember something between runs (not a setting a person
+edits) use a per-app key/value store. Values must be JSON-serializable:
+
+```python
+from bdh_sdk.storage import app_state
+
+state = app_state("display")
+opened = state.get("lifts_opened")          # None when unset
+state.set("lifts_opened", "2026-11-21")
+state.delete("lifts_opened"); state.keys(); "lifts_opened" in state
+```
+
+The hub installs a database backend with
+`bdh_sdk.storage.set_state_backend(backend)` (`get` raising `KeyError`,
+`set`, `delete`, `keys`). Without one, state lives in memory, which is what
+unit tests get.
+
+Files an app stores go in its own folder via a Django storage rooted at
+`MEDIA_ROOT/apps/<app_id>/` (served at `MEDIA_URL + "apps/<app_id>/"`):
+
+```python
+from bdh_sdk.storage import app_media
+
+storage = app_media("display")
+name = storage.save("photos/lake.jpg", uploaded_file)
+url = storage.url(name)
+```
+
+App ids must be lower-case letters, digits and `_`.
+
 ## Home Assistant client
 
 `bdh_sdk.ha` talks to Home Assistant for apps that need it (install the
