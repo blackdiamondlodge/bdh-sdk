@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 import bdh_sdk
+from bdh_sdk.plugins import BOOL, CHOICE, INT, TIME
 from bdh_sdk import (
     ALL_MODES,
     API_VERSION,
@@ -18,6 +19,7 @@ from bdh_sdk import (
     OWNER_ONLY,
     PluginSpec,
     Reading,
+    Setting,
     Shortcut,
     Stay,
     Status,
@@ -89,3 +91,37 @@ class ContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class SettingTests(unittest.TestCase):
+    def test_parse_by_type(self):
+        self.assertIs(Setting("a", "A", type=BOOL).parse("on"), True)
+        self.assertIs(Setting("a", "A", type=BOOL).parse(""), False)
+        self.assertEqual(Setting("a", "A", type=INT, minimum=1, maximum=60).parse(" 15 "), 15)
+        self.assertEqual(Setting("a", "A", type=TIME).parse("6:00"), "06:00")
+        self.assertEqual(Setting("a", "A").parse("  hi "), "hi")
+        pick = Setting("a", "A", type=CHOICE, choices=(("fall", "Fall"), "winter"))
+        self.assertEqual(pick.options, (("fall", "Fall"), ("winter", "winter")))
+        self.assertEqual(pick.parse("winter"), "winter")
+
+    def test_parse_rejects_bad_input(self):
+        cases = [
+            (Setting("a", "A", type=BOOL), "maybe"),
+            (Setting("a", "A", type=INT), "1.5"),
+            (Setting("a", "A", type=INT, minimum=1), "0"),
+            (Setting("a", "A", type=INT, maximum=60), "61"),
+            (Setting("a", "A", type=TIME), "24:00"),
+            (Setting("a", "A", type=TIME), "7:5"),
+            (Setting("a", "A", type=CHOICE, choices=("x",)), "y"),
+        ]
+        for setting, raw in cases:
+            with self.subTest(setting=setting.type, raw=raw), self.assertRaises(ValueError):
+                setting.parse(raw)
+
+    def test_declaration_is_checked(self):
+        with self.assertRaises(ValueError):
+            Setting("a", "A", type="colour")
+        with self.assertRaises(ValueError):
+            Setting("a", "A", type=CHOICE)
+
+    def test_spec_settings_default_empty(self):
+        self.assertEqual(PluginSpec(id="wifi", app="wifi").settings, ())

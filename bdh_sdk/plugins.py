@@ -124,6 +124,89 @@ class Card:
     level: str = INFO
 
 
+# Setting types an app can declare. The hub draws the matching control.
+BOOL = "bool"
+INT = "int"
+STR = "str"
+CHOICE = "choice"
+TIME = "time"  # "HH:MM", 24-hour
+SETTING_TYPES = frozenset({BOOL, INT, STR, CHOICE, TIME})
+
+
+@dataclass(frozen=True)
+class Setting:
+    """A setting the hub lets admins change on its Settings page.
+
+    The saved value wins over the environment, so the environment (or
+    ``default``) becomes the fallback. Read it with
+    ``bdh_sdk.settings.app_setting(app_id, key, default)`` as usual.
+    Never declare secrets here: they belong in the environment only.
+
+    ``choices`` (for ``choice``) is a tuple of values or ``(value, label)``
+    pairs. ``minimum``/``maximum`` bound ``int`` settings; ``unit`` is shown
+    after the input (e.g. "min").
+    """
+
+    key: str
+    label: str
+    type: str = STR
+    default: object = None
+    help: str = ""
+    choices: tuple = ()
+    minimum: int | None = None
+    maximum: int | None = None
+    unit: str = ""
+
+    def __post_init__(self):
+        if self.type not in SETTING_TYPES:
+            raise ValueError(f"setting {self.key!r} has unknown type {self.type!r}")
+        if self.type == CHOICE and not self.choices:
+            raise ValueError(f"choice setting {self.key!r} needs choices")
+
+    @property
+    def options(self) -> tuple:
+        """``choices`` as ``(value, label)`` pairs."""
+        return tuple(c if isinstance(c, tuple) else (c, str(c)) for c in self.choices)
+
+    def parse(self, raw):
+        """Turn form or environment input into a value of this setting's type.
+
+        Raises ``ValueError`` with a message fit to show next to the field.
+        """
+        if self.type == BOOL:
+            if isinstance(raw, bool):
+                return raw
+            text = str(raw).strip().lower()
+            if text in {"1", "true", "yes", "on"}:
+                return True
+            if text in {"0", "false", "no", "off", ""}:
+                return False
+            raise ValueError("Must be on or off.")
+        if self.type == INT:
+            try:
+                value = int(str(raw).strip())
+            except ValueError:
+                raise ValueError("Must be a whole number.") from None
+            if self.minimum is not None and value < self.minimum:
+                raise ValueError(f"Must be at least {self.minimum}.")
+            if self.maximum is not None and value > self.maximum:
+                raise ValueError(f"Must be at most {self.maximum}.")
+            return value
+        text = str(raw).strip()
+        if self.type == CHOICE:
+            for value, _label in self.options:
+                if text == str(value):
+                    return value
+            raise ValueError("Pick one of the options.")
+        if self.type == TIME:
+            hours, sep, minutes = text.partition(":")
+            if (sep and hours.isdigit() and minutes.isdigit() and len(minutes) == 2
+                    and int(hours) < 24 and int(minutes) < 60):
+                return f"{int(hours):02d}:{minutes}"
+            raise ValueError("Must be a time like 23:00.")
+        return text
+
+
 @dataclass(frozen=True)
 class PluginSpec:
     """Describes one hub app.
@@ -150,6 +233,9 @@ class PluginSpec:
     - ``card``: ``() -> Card | None``. The lodge card shown at the top of
       the homepage in every mode; the first app that provides one is used.
       Called like ``status``.
+
+    ``settings`` lists the :class:`Setting` objects admins can change on the
+    hub's Settings page; the app gets its own section there when non-empty.
     """
 
     id: str
@@ -163,6 +249,7 @@ class PluginSpec:
     websocket_routes: str | None = None
     stay: str | None = None
     card: str | None = None
+    settings: tuple[Setting, ...] = field(default_factory=tuple)
     api_version: int = API_VERSION
 
     @property

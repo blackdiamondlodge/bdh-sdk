@@ -6,7 +6,7 @@ import unittest
 from importlib.util import find_spec
 from unittest import mock
 
-from bdh_sdk.settings import MissingSetting, app_setting, as_bool, setting_name
+from bdh_sdk.settings import MissingSetting, app_setting, as_bool, set_store, setting_name
 
 
 def fake_django(**attrs):
@@ -117,3 +117,30 @@ class RealDjangoTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class StoreTests(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(set_store, None)
+        patcher = mock.patch.dict(os.environ, {"BDH_WIFI_SSID": "env"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_saved_value_beats_environment(self):
+        set_store(lambda app_id, key: {("wifi", "ssid"): "saved"}[(app_id, key)])
+        with mock.patch.dict(sys.modules, NO_DJANGO):
+            self.assertEqual(app_setting("wifi", "ssid"), "saved")
+            # Nothing saved for this key: falls through to the default.
+            self.assertEqual(app_setting("wifi", "other", "d"), "d")
+
+    def test_nothing_saved_falls_back_to_environment(self):
+        def lookup(app_id, key):
+            raise KeyError(key)
+        set_store(lookup)
+        with mock.patch.dict(sys.modules, NO_DJANGO):
+            self.assertEqual(app_setting("wifi", "ssid"), "env")
+
+    def test_cast_applies_to_saved_strings_only(self):
+        set_store(lambda app_id, key: {"n": "5", "b": True}[key])
+        with mock.patch.dict(sys.modules, NO_DJANGO):
+            self.assertEqual(app_setting("wifi", "n", cast=int), 5)
+            self.assertIs(app_setting("wifi", "b", cast=as_bool), True)
