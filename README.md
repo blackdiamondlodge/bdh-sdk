@@ -42,7 +42,7 @@ spec = PluginSpec(
 (`"blackdiamondhub.plugins"`), the homepage modes `GUEST`, `DASHBOARD`,
 `OWNER`, `ALL_MODES`, `OWNER_ONLY`, `SECTIONS`, the status levels `INFO`,
 `ON`, `WARN`, `STATUS_LEVELS`, and the frozen dataclasses `PluginSpec`,
-`Tile`, `Status`, `Shortcut`, `Stay`, `Card` and `Reading`. Hooks (`status`,
+`Tile`, `Status`, `Shortcut`, `Stay`, `Card`, `Reading` and `Setting`. Hooks (`status`,
 `shortcuts`, `run_shortcut`, `websocket_routes`, `stay`, `card`) are dotted
 `module.attribute` paths that the hub resolves lazily.
 
@@ -69,6 +69,9 @@ show_qr = app_setting("wifi", "show_qr", True, cast=as_bool)
 `app_setting(app_id, key, default=..., *, legacy=(), cast=None)` looks the
 setting up in this order and returns the first hit:
 
+0. The value saved on the hub's Settings page. The hub installs a store
+   with `bdh_sdk.settings.set_store(lookup)`; `lookup(app_id, key)` returns
+   the saved value or raises `KeyError`.
 1. Environment variable `BDH_<APPID>_<KEY>`: upper-cased, every
    non-alphanumeric character replaced by `_` (`("ski-cams", "base.url")` ->
    `BDH_SKI_CAMS_BASE_URL`).
@@ -82,6 +85,31 @@ An environment variable counts as set when it is present, even if empty.
 With no value and no default, `bdh_sdk.settings.MissingSetting` (a
 `KeyError`) is raised. `cast` is applied only to string values; `as_bool`
 accepts `1/true/yes/on` and `0/false/no/off` (case-insensitive).
+
+### Settings page
+
+Declare the settings admins may change from the hub, and the hub gives the
+app a section on its staff-only Settings page:
+
+```python
+from bdh_sdk import PluginSpec, Setting
+from bdh_sdk.plugins import BOOL, INT
+
+spec = PluginSpec(
+    id="wifi", app="wifi",
+    settings=(
+        Setting("show_qr", "Show QR code", type=BOOL, default=True),
+        Setting("refresh", "Refresh every", type=INT, default=5,
+                minimum=1, maximum=60, unit="min"),
+    ),
+)
+```
+
+Types are `BOOL`, `INT` (optional `minimum`/`maximum`), `STR`, `CHOICE`
+(`choices` of values or `(value, label)` pairs) and `TIME` (`"HH:MM"`).
+`Setting.parse(raw)` validates input and raises `ValueError` with a message
+for the form. Saved values win over the environment, so keep reading them
+with `app_setting`. Never declare secrets as settings.
 
 ## Home Assistant client
 

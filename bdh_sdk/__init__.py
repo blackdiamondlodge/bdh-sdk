@@ -19,13 +19,14 @@ from .plugins import (
     WARN,
     PluginSpec,
     Reading,
+    Setting,
     Shortcut,
     Stay,
     Status,
     Tile,
 )
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "__version__",
@@ -47,5 +48,6 @@ __all__ = [
     "Stay",
     "Reading",
     "Card",
+    "Setting",
     "PluginSpec",
 ]

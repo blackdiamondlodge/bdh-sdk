@@ -10,9 +10,10 @@ This module does not import Django at import time.
 import os
 import re
 
-__all__ = ["MissingSetting", "app_setting", "as_bool", "setting_name"]
+__all__ = ["MissingSetting", "app_setting", "as_bool", "set_store", "setting_name"]
 
 _MISSING = object()
+_store = None
 _NON_ALNUM = re.compile(r"[^A-Za-z0-9]")
 
 _TRUE = frozenset({"1", "true", "yes", "on"})
@@ -43,6 +44,17 @@ def as_bool(value):
     raise ValueError(f"not a boolean: {value!r}")
 
 
+def set_store(lookup):
+    """Install the saved-settings store that :func:`app_setting` checks first.
+
+    ``lookup(app_id, key)`` returns the saved value or raises ``KeyError``
+    when nothing is saved. The hub installs one backed by its database;
+    pass ``None`` to remove it.
+    """
+    global _store
+    _store = lookup
+
+
 def _django_settings():
     try:
         from django.conf import settings
@@ -59,6 +71,8 @@ def app_setting(app_id, key, default=_MISSING, *, legacy=(), cast=None):
 
     Lookup order (first hit wins):
 
+    0. The value saved on the hub's Settings page, when a store is
+       installed (see :func:`set_store`).
     1. Environment variable ``BDH_<APPID>_<KEY>`` (upper-cased, every
        non-alphanumeric character replaced by ``_``).
     2. The first environment variable in ``legacy`` that is set (old
@@ -78,10 +92,17 @@ def app_setting(app_id, key, default=_MISSING, *, legacy=(), cast=None):
     name = setting_name(app_id, key)
     value = _MISSING
 
-    for env_name in (name, *legacy):
-        if env_name in os.environ:
-            value = os.environ[env_name]
-            break
+    if _store is not None:
+        try:
+            value = _store(app_id, key)
+        except KeyError:
+            value = _MISSING
+
+    if value is _MISSING:
+        for env_name in (name, *legacy):
+            if env_name in os.environ:
+                value = os.environ[env_name]
+                break
 
     if value is _MISSING:
         settings = _django_settings()
