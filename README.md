@@ -156,6 +156,27 @@ from bdh_sdk.qr import qr_svg
 svg = qr_svg("http://192.168.10.216/settings/display/upload/abc/")
 ```
 
+## Alerts
+
+`bdh_sdk.alerts.push(Alert(...))` pops a modal up on every hub screen, in
+every mode and on every page, waking the screensaver. It shows `title`, an optional
+`body` and an `<iframe>` of `embed_url`, which must be a path on the hub. The modal closes
+after `ttl` seconds (1-600, default 60), or when someone taps X or the
+backdrop. Pushing again with the same `key` while it's showing restarts the timer;
+a different alert replaces it. Nothing goes to phones.
+
+```python
+from bdh_sdk.alerts import Alert, push
+
+push(Alert(app="cameras", key="doorbell:front", title="Someone's at the door",
+           embed_url="/cameras/popup/front/", ttl=60))
+```
+
+`push` never blocks and is safe from any thread, including one running its own
+event loop. Async code can `await apush(alert)`. The hub installs the delivery
+function with `set_sender`. Without one (unit tests, scripts), pushing only
+logs at debug level. Import `bdh_sdk.alerts` inside your worker, not in `plugin.py`.
+
 ## Home Assistant client
 
 `bdh_sdk.ha` talks to Home Assistant for apps that need it (install the

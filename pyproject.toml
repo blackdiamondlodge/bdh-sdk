@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bdh-sdk"
-version = "0.7.0"
+version = "0.8.0"
 description = "Black Diamond Hub SDK: the plugin contract hub apps import to describe themselves to the hub."
 readme = "README.md"
 requires-python = ">=3.11"
