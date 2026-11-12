@@ -28,8 +28,9 @@ from .plugins import (
     Tile,
 )
 from .auth import is_admin
+from .provides import BACKGROUNDS, SEASON, STATS, Background, SeasonHint, Stat
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"
 
 __all__ = [
     "__version__",
@@ -56,4 +57,10 @@ __all__ = [
     "Setting",
     "PluginSpec",
     "is_admin",
+    "STATS",
+    "BACKGROUNDS",
+    "SEASON",
+    "Stat",
+    "Background",
+    "SeasonHint",
 ]
