@@ -58,11 +58,47 @@ STATUS_LEVELS = frozenset({INFO, ON, WARN})
 
 
 @dataclass(frozen=True)
+class Action:
+    """A button on a status row or tile, handled by the ``run_action`` hook."""
+
+    id: str
+    icon: str  # Font Awesome classes, e.g. "fa-solid fa-pause"
+    label: str = ""  # accessible name; the button shows only the icon
+    primary: bool = False  # drawn in the accent colour
+
+
+@dataclass(frozen=True)
+class StatusRow:
+    """One live item on a tile, e.g. a speaker group that is playing.
+
+    ``image`` is a URL the screen's browser can load. ``dimmed`` greys the
+    row out (paused, idle).
+    """
+
+    id: str
+    title: str
+    detail: str = ""
+    image: str = ""
+    dimmed: bool = False
+    actions: tuple[Action, ...] = ()
+
+
+@dataclass(frozen=True)
 class Status:
-    """A one-line summary shown on the app's homepage tile."""
+    """A one-line summary shown on the app's homepage tile.
+
+    With ``rows`` the tile shows them, sized to fit the tile, each with its
+    own buttons; ``actions`` are tile-wide buttons, shown when the tile is
+    too small for rows. ``refresh`` (seconds) asks the homepage to check
+    again that often while this status is showing, for things that change
+    quickly; leave it None for the normal once a minute.
+    """
 
     text: str
     level: str = INFO
+    rows: tuple[StatusRow, ...] = ()
+    actions: tuple[Action, ...] = ()
+    refresh: int | None = None
 
 
 @dataclass(frozen=True)
@@ -223,6 +259,10 @@ class PluginSpec:
     - ``run_shortcut``: ``(shortcut_id) -> str | None``. Runs a shortcut the
       hub has already checked is offered in the caller's mode. Raise to
       report failure; the optional return value is shown to the user.
+    - ``run_action``: ``(row_id, action_id) -> str | None``. Runs a button
+      from the app's current ``Status``; ``row_id`` is ``""`` for a
+      tile-wide action. The hub has already checked the status offers it.
+      Accepts an optional ``mode`` argument like ``status``.
     - ``websocket_routes``: a list of Channels URL patterns (e.g.
       ``"myapp.routing.websocket_urlpatterns"``). Imported by the ASGI
       application after Django is set up and mounted under the shared
@@ -246,6 +286,7 @@ class PluginSpec:
     status: str | None = None
     shortcuts: str | None = None
     run_shortcut: str | None = None
+    run_action: str | None = None
     websocket_routes: str | None = None
     stay: str | None = None
     card: str | None = None

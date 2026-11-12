@@ -6,6 +6,7 @@ Importing this package never imports or configures Django, so app
 from .plugins import (
     ALL_MODES,
     API_VERSION,
+    Action,
     Card,
     DASHBOARD,
     ENTRY_POINT_GROUP,
@@ -23,11 +24,12 @@ from .plugins import (
     Shortcut,
     Stay,
     Status,
+    StatusRow,
     Tile,
 )
 from .auth import is_admin
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 __all__ = [
     "__version__",
@@ -45,6 +47,8 @@ __all__ = [
     "WARN",
     "STATUS_LEVELS",
     "Status",
+    "StatusRow",
+    "Action",
     "Shortcut",
     "Stay",
     "Reading",
