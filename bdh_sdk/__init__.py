@@ -21,6 +21,7 @@ from .plugins import (
     PluginSpec,
     Reading,
     Setting,
+    SettingsPage,
     Shortcut,
     Stay,
     Status,
@@ -30,7 +31,7 @@ from .plugins import (
 from .auth import is_admin
 from .provides import BACKGROUNDS, SEASON, STATS, Background, SeasonHint, Stat
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 __all__ = [
     "__version__",
@@ -55,6 +56,7 @@ __all__ = [
     "Reading",
     "Card",
     "Setting",
+    "SettingsPage",
     "PluginSpec",
     "is_admin",
     "STATS",
