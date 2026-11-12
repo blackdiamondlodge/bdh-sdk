@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 import bdh_sdk
-from bdh_sdk.plugins import BOOL, CHOICE, INT, TIME
+from bdh_sdk.plugins import BOOL, CHOICE, INT, MULTI, TIME
 from bdh_sdk import (
     ALL_MODES,
     API_VERSION,
@@ -92,6 +92,14 @@ class ContractTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+def _rooms():
+    return [("u1", "Kitchen"), "u2"]
+
+
+def _broken():
+    raise OSError("no network")
+
+
 class SettingTests(unittest.TestCase):
     def test_parse_by_type(self):
         self.assertIs(Setting("a", "A", type=BOOL).parse("on"), True)
@@ -102,6 +110,19 @@ class SettingTests(unittest.TestCase):
         pick = Setting("a", "A", type=CHOICE, choices=(("fall", "Fall"), "winter"))
         self.assertEqual(pick.options, (("fall", "Fall"), ("winter", "winter")))
         self.assertEqual(pick.parse("winter"), "winter")
+        multi = Setting("a", "A", type=MULTI, choices=("x", "y", "z"))
+        self.assertEqual(multi.parse(["y", "x", "y"]), ["y", "x"])
+        self.assertEqual(multi.parse(" x, z "), ["x", "z"])
+        self.assertEqual(multi.parse('["z"]'), ["z"])
+        self.assertEqual(multi.parse(""), [])
+
+    def test_choices_from_callable(self):
+        dyn = Setting("a", "A", type=MULTI, choices_from="tests.test_plugins._rooms")
+        self.assertEqual(dyn.options, (("u1", "Kitchen"), ("u2", "u2")))
+        # Values the callable no longer offers (an offline device) are kept.
+        self.assertEqual(dyn.parse(["u1", "gone"]), ["u1", "gone"])
+        broken = Setting("a", "A", type=CHOICE, choices_from="tests.test_plugins._broken")
+        self.assertEqual(broken.options, ())
 
     def test_parse_rejects_bad_input(self):
         cases = [
@@ -112,6 +133,8 @@ class SettingTests(unittest.TestCase):
             (Setting("a", "A", type=TIME), "24:00"),
             (Setting("a", "A", type=TIME), "7:5"),
             (Setting("a", "A", type=CHOICE, choices=("x",)), "y"),
+            (Setting("a", "A", type=MULTI, choices=("x",)), "x,y"),
+            (Setting("a", "A", type=MULTI, choices=("x",)), '{"x": 1}'),
         ]
         for setting, raw in cases:
             with self.subTest(setting=setting.type, raw=raw), self.assertRaises(ValueError):
@@ -122,6 +145,8 @@ class SettingTests(unittest.TestCase):
             Setting("a", "A", type="colour")
         with self.assertRaises(ValueError):
             Setting("a", "A", type=CHOICE)
+        with self.assertRaises(ValueError):
+            Setting("a", "A", type=MULTI)
 
     def test_spec_settings_default_empty(self):
         self.assertEqual(PluginSpec(id="wifi", app="wifi").settings, ())

@@ -8,8 +8,13 @@ This module is the public surface that plugin repos import, so it must stay
 free of Django model/settings imports: specs are loaded while settings are
 still being built.
 """
+import json
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
+from importlib import import_module
+
+log = logging.getLogger(__name__)
 
 API_VERSION = 1
 
@@ -166,7 +171,31 @@ INT = "int"
 STR = "str"
 CHOICE = "choice"
 TIME = "time"  # "HH:MM", 24-hour
-SETTING_TYPES = frozenset({BOOL, INT, STR, CHOICE, TIME})
+MULTI = "multi"  # a list of values picked from the choices (checkboxes)
+SETTING_TYPES = frozenset({BOOL, INT, STR, CHOICE, TIME, MULTI})
+
+
+def _call(path):
+    module, _, name = path.rpartition(".")
+    return getattr(import_module(module), name)()
+
+
+def as_list(raw):
+    """Parse a ``multi`` value: a list, a JSON list or comma-separated text."""
+    if isinstance(raw, (list, tuple)):
+        items = raw
+    else:
+        text = str(raw).strip()
+        if text.startswith("["):
+            try:
+                items = json.loads(text)
+            except ValueError:
+                raise ValueError("Must be a list.") from None
+            if not isinstance(items, list):
+                raise ValueError("Must be a list.")
+        else:
+            items = text.split(",")
+    return list(dict.fromkeys(str(i).strip() for i in items if str(i).strip()))
 
 
 @dataclass(frozen=True)
@@ -178,9 +207,15 @@ class Setting:
     ``bdh_sdk.settings.app_setting(app_id, key, default)`` as usual.
     Never declare secrets here: they belong in the environment only.
 
-    ``choices`` (for ``choice``) is a tuple of values or ``(value, label)``
-    pairs. ``minimum``/``maximum`` bound ``int`` settings; ``unit`` is shown
-    after the input (e.g. "min").
+    ``choices`` (for ``choice`` and ``multi``) is a tuple of values or
+    ``(value, label)`` pairs. ``choices_from`` is instead the dotted path of a
+    zero-argument callable returning them, for options only known at run
+    time (e.g. the speakers on the network); it is called each time the
+    Settings page is drawn. A ``multi`` setting is a list of picked values;
+    with ``choices_from`` it may keep values the callable no longer returns,
+    so a device that is offline right now stays picked.
+    ``minimum``/``maximum`` bound ``int`` settings; ``unit`` is shown after
+    the input (e.g. "min").
     """
 
     key: str
@@ -189,6 +224,7 @@ class Setting:
     default: object = None
     help: str = ""
     choices: tuple = ()
+    choices_from: str = ""
     minimum: int | None = None
     maximum: int | None = None
     unit: str = ""
@@ -196,13 +232,20 @@ class Setting:
     def __post_init__(self):
         if self.type not in SETTING_TYPES:
             raise ValueError(f"setting {self.key!r} has unknown type {self.type!r}")
-        if self.type == CHOICE and not self.choices:
-            raise ValueError(f"choice setting {self.key!r} needs choices")
+        if self.type in (CHOICE, MULTI) and not (self.choices or self.choices_from):
+            raise ValueError(f"{self.type} setting {self.key!r} needs choices or choices_from")
 
     @property
     def options(self) -> tuple:
-        """``choices`` as ``(value, label)`` pairs."""
-        return tuple(c if isinstance(c, tuple) else (c, str(c)) for c in self.choices)
+        """The choices as ``(value, label)`` pairs; ``()`` if ``choices_from`` fails."""
+        choices = self.choices
+        if self.choices_from:
+            try:
+                choices = tuple(_call(self.choices_from))
+            except Exception:
+                log.warning("choices for setting %r failed", self.key, exc_info=True)
+                return ()
+        return tuple(c if isinstance(c, tuple) else (c, str(c)) for c in choices)
 
     def parse(self, raw):
         """Turn form or environment input into a value of this setting's type.
@@ -228,6 +271,13 @@ class Setting:
             if self.maximum is not None and value > self.maximum:
                 raise ValueError(f"Must be at most {self.maximum}.")
             return value
+        if self.type == MULTI:
+            values = as_list(raw)
+            if not self.choices_from:
+                known = {str(v) for v, _label in self.options}
+                if any(v not in known for v in values):
+                    raise ValueError("Pick from the options.")
+            return values
         text = str(raw).strip()
         if self.type == CHOICE:
             for value, _label in self.options:

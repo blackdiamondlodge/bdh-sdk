@@ -156,7 +156,15 @@ spec = PluginSpec(
 ```
 
 Types are `BOOL`, `INT` (optional `minimum`/`maximum`), `STR`, `CHOICE`
-(`choices` of values or `(value, label)` pairs) and `TIME` (`"HH:MM"`).
+(`choices` of values or `(value, label)` pairs), `MULTI` (a list of values
+picked from `choices`, drawn as checkboxes) and `TIME` (`"HH:MM"`). For
+options only known at run time, pass `choices_from="myapp.module.func"`
+instead of `choices`: a zero-argument callable returning the same pairs,
+called whenever the Settings page is drawn. A `MULTI` setting with
+`choices_from` keeps picked values the callable no longer returns (e.g. a
+speaker that is offline). In the environment a `MULTI` value is a JSON list
+or comma-separated text; read it with `app_setting(..., cast=as_list)`
+(`from bdh_sdk.plugins import as_list`).
 `Setting.parse(raw)` validates input and raises `ValueError` with a message
 for the form. Saved values win over the environment, so keep reading them
 with `app_setting`. Never declare secrets as settings.
