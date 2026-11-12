@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bdh-sdk"
-version = "0.8.1"
+version = "0.9.0"
 description = "Black Diamond Hub SDK: the plugin contract hub apps import to describe themselves to the hub."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,7 +20,7 @@ classifiers = [
 [project.optional-dependencies]
 # bdh_sdk.ha (Home Assistant client)
 ha = ["requests>=2.28", "websocket-client>=1.6"]
-# bdh_sdk.qr (lodge-branded QR codes)
+# bdh_sdk.qr (site-branded QR codes)
 qr = ["qrcode>=7.4"]
 
 [project.urls]
