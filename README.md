@@ -188,6 +188,41 @@ event loop. Async code can `await apush(alert)`. The hub installs the delivery
 function with `set_sender`. Without one (unit tests, scripts), pushing only
 logs at debug level. Import `bdh_sdk.alerts` inside your worker, not in `plugin.py`.
 
+## Events
+
+`bdh_sdk.events` lets apps react to things happening elsewhere without talking
+to Home Assistant (or anything else) directly. The hub runs event sources,
+declared per site in `site.toml`, and publishes what they see; apps subscribe.
+
+```python
+from bdh_sdk import events
+
+def door(event):  # event.topic, event.data, event.time, event.source
+    if event.data["new"] == "on" and event.data["old"] == "off":
+        ...
+
+events.subscribe("ha/state/binary_sensor.front_door", door)
+events.publish("cameras/doorbell/front", {"camera": "front"})  # your own events
+```
+
+- Topics are `/`-separated. The first segment is the source name from
+  `site.toml` (e.g. `ha`, `sunpeaks`, `hook`) or the publishing app's id; apps
+  publish under their own id.
+- Home Assistant sources publish `<source>/state/<entity_id>` with data
+  `{"entity_id", "old", "new", "attributes"}`. They only fetch entities
+  someone subscribed to, so subscribe to exact entities where you can.
+- Patterns take MQTT wildcards: `+` is one segment, a trailing `#` is the rest.
+- Handlers run on one shared dispatcher thread and must not block. Plain
+  functions are called directly; `async def` handlers run as tasks there. An
+  exception is logged and doesn't affect other handlers.
+- Delivery is best effort: nothing is replayed after a source reconnects.
+- `subscribe` returns a `Subscription` with `cancel()`. Subscribe from your
+  `AppConfig.ready()` (or your worker), never at `plugin.py` import time.
+- `publish` is thread-safe and never blocks; async code can
+  `await events.apublish(...)`.
+- Tests: `events.flush()` waits for pending handlers and `events.reset()`
+  drops all subscriptions.
+
 ## Admin check
 
 `is_admin(request)` is true when a signed-in, active hub admin (Django staff
