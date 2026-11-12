@@ -215,6 +215,24 @@ url = storage.url(name)
 
 App ids must be lower-case letters, digits and `_`.
 
+## Units
+
+The hub has one units setting, metric or imperial, for every app: the °C/°F
+switch in its title bar (a site sets the starting value with
+`[apps.hub] units` in its `site.toml`). Apps read it and show their numbers
+in it; they can't change it. An app may offer its own view-only switch by
+passing the choice to `units()`.
+
+```python
+from bdh_sdk.units import system, units
+
+system()              # "metric" or "imperial"
+u = units()           # or units(request.GET.get("units")) for a view-only switch
+u.temp_text(15.6)     # "16°C" / "60°F"
+u.speed_text(10)      # "10 km/h" / "6 mph"
+u.length_text(1000)   # "1,000 m" / "3,281 ft"
+u.t(15.6), u.temp_unit  # 16, "°C"
+```
 ## Branding
 
 `bdh_sdk.branding.brand()` returns the site's `name`, `subtitle` and
