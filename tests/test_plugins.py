@@ -33,7 +33,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(spec.api_version, API_VERSION)
         self.assertEqual(spec.tiles, ())
         for name in ("urls", "url_prefix", "status", "shortcuts",
-                     "run_shortcut", "websocket_routes", "stay", "card"):
+                     "run_shortcut", "run_action", "websocket_routes", "stay", "card"):
             self.assertIsNone(getattr(spec, name), name)
 
     def test_prefix_defaults_to_id_and_honours_override(self):

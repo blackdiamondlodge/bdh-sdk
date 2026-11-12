@@ -42,9 +42,18 @@ spec = PluginSpec(
 (`"blackdiamondhub.plugins"`), the homepage modes `GUEST`, `DASHBOARD`,
 `OWNER`, `ALL_MODES`, `OWNER_ONLY`, `SECTIONS`, the status levels `INFO`,
 `ON`, `WARN`, `STATUS_LEVELS`, and the frozen dataclasses `PluginSpec`,
-`Tile`, `Status`, `Shortcut`, `Stay`, `Card`, `Reading` and `Setting`. Hooks (`status`,
-`shortcuts`, `run_shortcut`, `websocket_routes`, `stay`, `card`) are dotted
+`Tile`, `Status`, `StatusRow`, `Action`, `Shortcut`, `Stay`, `Card`, `Reading` and
+`Setting`. Hooks (`status`, `shortcuts`, `run_shortcut`, `run_action`,
+`websocket_routes`, `stay`, `card`) are dotted
 `module.attribute` paths that the hub resolves lazily.
+
+A `status` hook can return live `rows` (`StatusRow`: title, detail,
+image URL, `dimmed`, and `Action` buttons) instead of just a line of text,
+e.g. the speaker groups that are playing. The tile shows as many as fit its
+size; tile-wide `actions` are used when it is too small for rows. Taps call
+`run_action(row_id, action_id)` (`row_id` is `""` for tile-wide actions).
+Set `Status.refresh` (seconds) for things that change quickly: the
+homepage checks that often while the status is showing.
 
 A `stay` hook returns the `Stay` in progress (guest name, arrival, checkout)
 or None. While an app reports a stay the homepage is in guest mode and
