@@ -276,6 +276,12 @@ class PluginSpec:
 
     ``settings`` lists the :class:`Setting` objects admins can change on the
     hub's Settings page; the app gets its own section there when non-empty.
+
+    ``provides`` maps capability names from :mod:`bdh_sdk.provides` (e.g.
+    ``"stats"``) to dotted paths of zero-argument callables, for data other
+    parts of the hub can use. ``stat_keys`` lists the ``(key, label)`` of
+    every stat the app may provide. An app needs no tiles or URLs: it can
+    just provide data and settings.
     """
 
     id: str
@@ -291,7 +297,16 @@ class PluginSpec:
     stay: str | None = None
     card: str | None = None
     settings: tuple[Setting, ...] = field(default_factory=tuple)
+    provides: dict[str, str] = field(default_factory=dict, hash=False)
+    stat_keys: tuple[tuple[str, str], ...] = field(default_factory=tuple)
     api_version: int = API_VERSION
+
+    def __post_init__(self):
+        keys = [key for key, _label in self.stat_keys]
+        if len(keys) != len(set(keys)):
+            raise ValueError(f"plugin {self.id!r} has duplicate stat_keys")
+        if any(not key or not label for key, label in self.stat_keys):
+            raise ValueError(f"plugin {self.id!r} stat_keys need a key and a label")
 
     @property
     def prefix(self) -> str:

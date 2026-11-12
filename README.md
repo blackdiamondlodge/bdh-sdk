@@ -66,6 +66,47 @@ every mode (title, detail line, `Reading`s such as temperatures, and
 alerts). Tapping it opens `url_name`; guests see neither alerts nor the
 link.
 
+## Provided data
+
+Apps can offer data to other parts of the hub (today: the screensaver) with
+`provides`, a map from capability to a zero-argument callable. An app with
+no tiles or URLs that only provides data and settings is fine.
+
+```python
+from bdh_sdk import PluginSpec, STATS, Stat
+
+spec = PluginSpec(
+    id="weather",
+    app="weather",
+    provides={STATS: "weather.provide.stats"},
+    stat_keys=(("temp", "Temperature"), ("sunrise", "Sunrise")),
+)
+
+# weather/provide.py
+def stats():
+    now = cached_conditions()            # return quickly, from your own cache
+    yield Stat("temp", "Temperature", value=f"{now.temp:.0f}°C")
+    yield Stat("sunrise", "Sunrise", time=now.sunrise)   # timezone-aware
+```
+
+| capability | returns | used for |
+|---|---|---|
+| `STATS` (`"stats"`) | iterable of `Stat` | screensaver info strip |
+| `BACKGROUNDS` (`"backgrounds"`) | iterable of `Background` | screensaver live cam |
+| `SEASON` (`"season"`) | `SeasonHint` or None | bringing winter forward (e.g. lifts open) |
+
+- `Stat` has exactly one of `value` (formatted, with units) or `time`
+  (timezone-aware). Declare every key in `stat_keys`: the settings page
+  lists them without calling the app, and undeclared keys are dropped.
+  Other code refers to a stat as `"<plugin id>.<key>"`, e.g.
+  `weather.sunrise`.
+- `Background(id, label, image_url, refresh_seconds=60)`: the screen
+  reloads the URL every `refresh_seconds`, so a stable URL is fine.
+- `SeasonHint("winter", reason)` can only bring winter forward.
+
+The hub calls providers in worker threads with a short deadline and keeps
+the last good result, so a slow upstream never stalls a screen.
+
 ## App settings
 
 ```python
