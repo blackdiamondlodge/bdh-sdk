@@ -143,12 +143,23 @@ url = storage.url(name)
 
 App ids must be lower-case letters, digits and `_`.
 
+## Branding
+
+`bdh_sdk.branding.brand()` returns the site's `name`, `subtitle` and
+`monogram` / `monogram_light` SVG paths; `monogram_svg(light=False)` returns
+the SVG text (100x100 viewBox; `light` is the version for dark backgrounds).
+The hub sets them per site through `settings.HUB_BRAND`. Anything a site
+leaves out falls back to "Black Diamond Hub" and the BDH monogram shipped
+with the SDK.
+
 ## QR codes
 
-`bdh_sdk.qr.qr_svg(text)` returns an SVG QR code in the lodge style: round
-dots, square finder patterns and the BDL monogram in the centre (error
-correction H keeps it scannable). Install the `bdh-sdk[qr]` extra; the hub
-already ships `qrcode`.
+`bdh_sdk.qr.qr_svg(text)` returns an SVG QR code in the hub style: round
+dots, square finder patterns and the site's monogram in the centre (error
+correction H keeps it scannable). Text over 200 characters drops to error
+correction L with a smaller monogram so the code isn't too dense to scan.
+Pass `logo=<svg text>` to use a different centre image. Install the
+`bdh-sdk[qr]` extra; the hub already ships `qrcode`.
 
 ```python
 from bdh_sdk.qr import qr_svg

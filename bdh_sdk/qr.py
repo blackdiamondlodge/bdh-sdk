@@ -1,34 +1,36 @@
-"""Lodge-branded QR codes (install the ``bdh-sdk[qr]`` extra)."""
-from functools import lru_cache
-from pathlib import Path
+"""Site-branded QR codes (install the ``bdh-sdk[qr]`` extra)."""
+from .branding import monogram_svg
 
 QR_COLOR = "#0b1622"
 QR_BORDER = 4  # quiet zone, in modules (the QR spec minimum)
 LOGO_FRACTION = 0.26  # logo width as a share of the code width; safe with ECC level H
-LOGO_FILE = Path(__file__).parent / "bdl-monogram.svg"
+LONG_TEXT = 200  # longer text drops to ECC L with a smaller logo, so the code isn't too dense to scan
+LONG_LOGO_FRACTION = 0.14
 
 
-@lru_cache(maxsize=1)
-def _logo_inner():
-    """Contents of the monogram SVG (everything inside the root <svg>)."""
-    svg = LOGO_FILE.read_text(encoding="utf-8")
+def _inner(svg):
+    """Contents of an SVG document (everything inside the root <svg>)."""
     return svg[svg.index(">") + 1:svg.rindex("</svg>")]
 
 
-def qr_svg(text):
+def qr_svg(text, logo=None):
     """SVG of a QR code for text: round dots, square finder patterns and the
-    lodge monogram over a cleared centre. Error correction H (30%) keeps it
-    scannable with the centre covered."""
+    site's monogram (or ``logo``, SVG text with a 100x100 viewBox) over a
+    cleared centre. Error correction H (30%) keeps it scannable with the
+    centre covered; text over 200 characters uses L and a smaller logo."""
     import qrcode
 
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H, border=QR_BORDER)
+    long = len(text) > LONG_TEXT
+    level = qrcode.constants.ERROR_CORRECT_L if long else qrcode.constants.ERROR_CORRECT_H
+    qr = qrcode.QRCode(error_correction=level, border=QR_BORDER)
     qr.add_data(text)
     qr.make(fit=True)
     matrix = qr.get_matrix()
     n = len(matrix)
     finders = [(QR_BORDER, QR_BORDER), (QR_BORDER, n - QR_BORDER - 7), (n - QR_BORDER - 7, QR_BORDER)]
 
-    hole = round((n - 2 * QR_BORDER) * LOGO_FRACTION) | 1  # odd, so it centres on a module
+    fraction = LONG_LOGO_FRACTION if long else LOGO_FRACTION
+    hole = round((n - 2 * QR_BORDER) * fraction) | 1  # odd, so it centres on a module
     h0 = (n - hole) // 2
     h1 = h0 + hole
 
@@ -58,5 +60,5 @@ def qr_svg(text):
         f'<g fill="{QR_COLOR}">{dots}</g>'
         f'<g fill="{QR_COLOR}">{eyes}</g>'
         f'<svg x="{origin}" y="{origin}" width="{size}" height="{size}" viewBox="0 0 100 100" class="qr-logo">'
-        f'{_logo_inner()}</svg></svg>'
+        f'{_inner(logo or monogram_svg())}</svg></svg>'
     )
