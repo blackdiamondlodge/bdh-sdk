@@ -294,6 +294,29 @@ class Setting:
 
 
 @dataclass(frozen=True)
+class SettingsPage:
+    """A settings page the app draws itself, linked from its section on the
+    hub's Settings page (for things a flat list of settings can't hold, like
+    a list of calendar feeds).
+
+    ``url_name`` is a Django URL name reversed by the hub (e.g.
+    ``"calendar:feeds"``). The view must check ``bdh_sdk.auth.is_admin``
+    itself. To share the hub's look, its template can extend
+    ``hub_settings/_layout.html`` and fill ``{% block section %}``; the hub
+    supplies the navigation context.
+    """
+
+    title: str
+    url_name: str
+    subtitle: str = ""
+    icon: str = "fas fa-sliders"
+
+    def __post_init__(self):
+        if not self.title or not self.url_name:
+            raise ValueError("SettingsPage needs a title and a url_name")
+
+
+@dataclass(frozen=True)
 class PluginSpec:
     """Describes one hub app.
 
@@ -326,6 +349,8 @@ class PluginSpec:
 
     ``settings`` lists the :class:`Setting` objects admins can change on the
     hub's Settings page; the app gets its own section there when non-empty.
+    ``settings_pages`` lists :class:`SettingsPage` links shown in that
+    section too (the app gets a section if either is non-empty).
 
     ``provides`` maps capability names from :mod:`bdh_sdk.provides` (e.g.
     ``"stats"``) to dotted paths of zero-argument callables, for data other
@@ -347,6 +372,7 @@ class PluginSpec:
     stay: str | None = None
     card: str | None = None
     settings: tuple[Setting, ...] = field(default_factory=tuple)
+    settings_pages: tuple[SettingsPage, ...] = field(default_factory=tuple)
     provides: dict[str, str] = field(default_factory=dict, hash=False)
     stat_keys: tuple[tuple[str, str], ...] = field(default_factory=tuple)
     api_version: int = API_VERSION

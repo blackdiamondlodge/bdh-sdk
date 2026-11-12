@@ -18,6 +18,7 @@ from bdh_sdk import (
     OWNER,
     OWNER_ONLY,
     PluginSpec,
+    SettingsPage,
     Reading,
     Setting,
     Shortcut,
@@ -150,3 +151,11 @@ class SettingTests(unittest.TestCase):
 
     def test_spec_settings_default_empty(self):
         self.assertEqual(PluginSpec(id="wifi", app="wifi").settings, ())
+
+    def test_settings_pages(self):
+        page = SettingsPage("Feeds", "calendar:feeds", subtitle="iCal links")
+        spec = PluginSpec(id="calendar", app="calendar", settings_pages=(page,))
+        self.assertEqual(spec.settings_pages[0].url_name, "calendar:feeds")
+        self.assertEqual(PluginSpec(id="wifi", app="wifi").settings_pages, ())
+        with self.assertRaises(ValueError):
+            SettingsPage("", "calendar:feeds")

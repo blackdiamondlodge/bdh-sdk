@@ -169,6 +169,20 @@ or comma-separated text; read it with `app_setting(..., cast=as_list)`
 for the form. Saved values win over the environment, so keep reading them
 with `app_setting`. Never declare secrets as settings.
 
+For anything a flat list can't hold (say, a list of calendar feeds), the
+app can draw its own pages and list them in `settings_pages`; the hub links
+them from the app's section:
+
+```python
+from bdh_sdk import SettingsPage
+
+settings_pages=(SettingsPage("Feeds", "calendar:feeds", subtitle="iCal links"),)
+```
+
+`url_name` is reversed by the hub. The view must check `is_admin(request)`
+itself. Its template can `{% extends "hub_settings/_layout.html" %}` and fill
+`{% block section %}` to sit inside the hub's Settings navigation.
+
 ## App state and media
 
 Apps that need to remember something between runs (not a setting a person
