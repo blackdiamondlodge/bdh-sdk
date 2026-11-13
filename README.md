@@ -366,7 +366,32 @@ ok, err = ha.call_service("light", "turn_on", "light.kitchen")
 
 Read helpers (`get_entity_state`, `get_entity_states`, `get_history`) return
 `None`/`{}` when HA is unreachable, so pages can still render.
-`get_all_states`, `get_static` and `ws_commands` raise `ha.HAError` instead.
+`get_all_states`, `get_static`, `upload_media` and `ws_commands` raise
+`ha.HAError` instead.
+
+## Speakers
+
+`bdh_sdk.speakers` makes announcements on the house speakers, so an app can
+talk without knowing Home Assistant (needs the `bdh-sdk[ha]` extra and an
+admin HA token, used to upload the chimes to HA's local media).
+
+```python
+from bdh_sdk import Setting
+from bdh_sdk.speakers import announce
+
+Setting("speakers", "Speakers", "multi", default=[],
+        choices_from="bdh_sdk.speakers.list_speakers")
+
+failed = announce("Dinner's ready", ["media_player.kitchen"], volume=40,
+                  chime="ding-dong", voice="AvaNeural")
+```
+
+`list_speakers()` lists Sonos and Alexa (`alexa_media`) speakers as
+`(entity_id, "Kitchen (Sonos)")` pairs. `announce()` plays the chime (one of
+`alerts.CHIMES`) and then the message on Sonos, ducking and resuming the music,
+and sends Alexa devices an announcement, which has its own tone. It blocks
+until done, returns the speakers that failed and raises
+`speakers.AnnounceError` if all of them did. Announcements never overlap.
 
 ## Testing helpers
 
