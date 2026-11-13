@@ -282,11 +282,18 @@ after `ttl` seconds (1-600, default 60), or when someone taps X or the
 backdrop. Pushing again with the same `key` while it's showing restarts the timer;
 a different alert replaces it. Nothing goes to phones.
 
+A new alert plays a chime. `sound=None` (the default) uses the hub's default
+chime, `"none"` (`SILENT`) is quiet, a name from `CHIMES` picks a built-in
+one (`"ding-dong"`, `"soft-bell"`, `"notify"`, `"knock-knock"`, ...), and a
+path on the hub (e.g. `/static/myapp/ring.mp3`) plays your own file. Repeats
+with the same `key` don't chime again, and nothing plays during the hub's night
+window. Settings pages can preview a chime with `BDHChimes.play(name)`.
+
 ```python
 from bdh_sdk.alerts import Alert, push
 
 push(Alert(app="cameras", key="doorbell:front", title="Someone's at the door",
-           embed_url="/cameras/popup/front/", ttl=60))
+           embed_url="/cameras/popup/front/", ttl=60, sound="ding-dong"))
 ```
 
 `push` never blocks and is safe from any thread, including one running its own

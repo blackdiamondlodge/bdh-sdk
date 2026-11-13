@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-from bdh_sdk.alerts import Alert, apush, push, set_sender
+from bdh_sdk.alerts import CHIMES, SILENT, Alert, apush, push, set_sender
 
 
 def make(**kw):
@@ -35,6 +35,14 @@ class AlertTests(unittest.TestCase):
                 make(**kw)
         with self.assertRaises(TypeError):
             push({"app": "cameras"})
+
+    def test_sound_is_a_chime_silent_or_a_hub_path(self):
+        for snd in (None, SILENT, *CHIMES, "/static/cameras/ring.mp3"):
+            with self.subTest(sound=snd):
+                self.assertEqual(make(sound=snd).as_dict()["sound"], snd)
+        for snd in ("", "foghorn", "https://evil.example/a.mp3", "//evil.example/a.mp3", "/\\evil", 3):
+            with self.subTest(sound=snd), self.assertRaises(ValueError):
+                make(sound=snd)
 
 
 if __name__ == "__main__":
