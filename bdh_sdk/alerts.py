@@ -6,6 +6,11 @@ shows it in a modal: a title, an optional line of text and an ``<iframe>`` of
 ``ttl`` seconds. Pushing again with the same ``key`` while it is showing just
 restarts the timer, and a different alert replaces the one on screen.
 
+A new alert plays ``sound``: ``None`` for the hub's default chime,
+:data:`SILENT` for none, one of :data:`CHIMES`, or a path to an audio file
+on the hub. Repeats with the same ``key`` stay quiet, and so does the hub's
+night window.
+
 The hub installs the delivery function with :func:`set_sender`; without one
 (unit tests, scripts) pushing only logs at debug level. :func:`push` is safe
 to call from any thread, including one running its own event loop, and never
@@ -17,13 +22,24 @@ import logging
 import re
 from dataclasses import asdict, dataclass
 
-__all__ = ["Alert", "apush", "push", "set_sender"]
+__all__ = ["CHIMES", "SILENT", "Alert", "apush", "push", "set_sender"]
 
 log = logging.getLogger(__name__)
 
 MAX_TTL = 600
 
 _APP_ID = re.compile(r"^[a-z0-9_]+$")
+
+# Built-in chimes the hub can play, in the order its pickers list them.
+CHIMES = (
+    "ding-dong", "soft-bell", "rising-trio", "notify", "westminster", "glass-ping",
+    "low-pulse", "knock-knock", "ding-dong-ding", "harp-sweep", "kalimba", "single-ding",
+)
+SILENT = "none"
+
+
+def _hub_path(value):
+    return isinstance(value, str) and value.startswith("/") and not value.startswith("//") and "\\" not in value
 
 
 @dataclass(frozen=True)
@@ -45,11 +61,13 @@ class Alert:
         if not self.title or not isinstance(self.title, str):
             raise ValueError("alert title is required")
         # Same-origin paths only: the hub loads this in an iframe on every screen.
-        url = self.embed_url
-        if not isinstance(url, str) or not url.startswith("/") or url.startswith("//") or "\\" in url:
-            raise ValueError(f"embed_url must be a path on the hub, got {url!r}")
+        if not _hub_path(self.embed_url):
+            raise ValueError(f"embed_url must be a path on the hub, got {self.embed_url!r}")
         if isinstance(self.ttl, bool) or not isinstance(self.ttl, int) or not 1 <= self.ttl <= MAX_TTL:
             raise ValueError(f"ttl must be 1-{MAX_TTL} seconds, got {self.ttl!r}")
+        snd = self.sound
+        if snd is not None and snd != SILENT and snd not in CHIMES and not _hub_path(snd):
+            raise ValueError(f"sound must be None, {SILENT!r}, a chime name or a path on the hub, got {snd!r}")
 
     def as_dict(self):
         return asdict(self)
