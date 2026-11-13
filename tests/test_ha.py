@@ -58,6 +58,23 @@ class HAClientTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("401", err)
 
+    @mock.patch("bdh_sdk.ha.requests.post")
+    def test_call_service_without_entity(self, post):
+        post.return_value = _resp()
+        ha.call_service("notify", "alexa_media", None, {"message": "hi"})
+        self.assertEqual(post.call_args.kwargs["json"], {"message": "hi"})
+
+    @mock.patch("bdh_sdk.ha.requests.post")
+    def test_upload_media(self, post):
+        post.return_value = _resp(body={"media_content_id": "media-source://media_source/local/x/a.wav"})
+        mid = ha.upload_media("/x/", "a.wav", b"RIFF", "audio/wav")
+        self.assertEqual(mid, "media-source://media_source/local/x/a.wav")
+        self.assertEqual(post.call_args.kwargs["data"], {"media_content_id": "media-source://media_source/local/x"})
+        self.assertEqual(post.call_args.kwargs["files"]["file"], ("a.wav", b"RIFF", "audio/wav"))
+        post.return_value = _resp(status=401, text="admin only")
+        with self.assertRaises(ha.HAError):
+            ha.upload_media("x", "a.wav", b"", "audio/wav")
+
 
 if __name__ == "__main__":
     unittest.main()

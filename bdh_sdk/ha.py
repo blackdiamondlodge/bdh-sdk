@@ -26,6 +26,7 @@ __all__ = [
     "get_entity_states",
     "get_history",
     "get_static",
+    "upload_media",
     "ws_commands",
 ]
 
@@ -124,9 +125,12 @@ def get_history(entity_ids, start, end=None):
 
 
 def call_service(domain, service, entity_id, extra_data=None):
-    """Call ``domain.service`` on ``entity_id``. Returns (success, error or None)."""
+    """Call ``domain.service`` on ``entity_id``. Returns (success, error or None).
+
+    Pass ``entity_id=None`` for services that take no entity (e.g. ``notify``).
+    """
     url = urljoin(_base_url(), f"/api/services/{domain}/{service}")
-    payload = {"entity_id": entity_id}
+    payload = {} if entity_id is None else {"entity_id": entity_id}
     if extra_data:
         payload.update(extra_data)
     try:
@@ -140,6 +144,29 @@ def call_service(domain, service, entity_id, extra_data=None):
         msg = f"Request failed: {exc}"
         logger.error(msg)
         return False, msg
+
+
+def upload_media(folder, filename, data, content_type):
+    """Upload ``data`` to HA's local media under ``folder`` (created if missing).
+
+    Returns the file's ``media-source://`` id. Needs an admin token. Raises
+    HAError on failure.
+    """
+    url = urljoin(_base_url(), "/api/media_source/local_source/upload")
+    target = "media-source://media_source/local/" + folder.strip("/")
+    try:
+        resp = requests.post(
+            url,
+            headers={"Authorization": "Bearer " + (_token() or "")},
+            data={"media_content_id": target},
+            files={"file": (filename, data, content_type)},
+            timeout=TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        raise HAError(f"upload {filename} failed: {exc}") from exc
+    if resp.status_code != 200:
+        raise HAError(f"HA returned {resp.status_code} uploading {filename}: {resp.text[:200]}")
+    return resp.json()["media_content_id"]
 
 
 def get_all_states():
