@@ -233,6 +233,22 @@ u.speed_text(10)      # "10 km/h" / "6 mph"
 u.length_text(1000)   # "1,000 m" / "3,281 ft"
 u.t(15.6), u.temp_unit  # 16, "°C"
 ```
+## Location
+
+The hub has one location, set by an admin under Settings > Location: a city
+picked from a search, and its time zone (taken from the city unless the admin
+picks another). Apps read it; they can't change it.
+
+```python
+from bdh_sdk.location import location, tzinfo
+
+where = location()        # None until the hub's location is set
+where.label               # "Sun Peaks, British Columbia, Canada"
+where.name                # "Sun Peaks"
+where.latitude, where.longitude  # 50.88, -119.91 (None if unknown)
+where.timezone            # "America/Vancouver"
+tzinfo()                  # ZoneInfo("America/Vancouver"); UTC when unset
+```
 ## Branding
 
 `bdh_sdk.branding.brand()` returns the site's `name`, `subtitle` and
