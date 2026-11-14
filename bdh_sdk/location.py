@@ -1,6 +1,6 @@
 """The hub's location: one place, and its time zone, for every app.
 
-The hub owns it (Settings > Location, saved as ``hub``/``location``). Apps
+The hub owns it (Settings > General, saved as ``hub``/``location``). Apps
 read it here, e.g. for a forecast or to show times in the hub's local time;
 there is no way to change it from an app.
 
