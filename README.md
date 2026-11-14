@@ -235,7 +235,7 @@ u.t(15.6), u.temp_unit  # 16, "°C"
 ```
 ## Location
 
-The hub has one location, set by an admin under Settings > Location: a city
+The hub has one location, set by an admin under Settings > General: a city
 picked from a search, and its time zone (taken from the city unless the admin
 picks another). Apps read it; they can't change it.
 
